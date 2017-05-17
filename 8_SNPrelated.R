@@ -2,15 +2,12 @@ rm(list=ls())
 
 ##Script para correr SNPrelate
 
-source("http://bioconductor.org/biocLite.R")
-biocLite("gdsfmt")
-biocLite("SNPRelate")
-
+##cargar las librerias
 library(gdsfmt)
 library(SNPRelate)
 
 #COnverit el VCF en GDS
-vcf.fn <- "../data/SNPrelate/Hypsiboas2"
+vcf.fn <- "../data/SNPrelate/Hypsiboas2.vcf"
 ##reformatear
 snpgdsVCF2GDS(vcf.fn, "../data/SNPrelate/Hypsi.gds", method="biallelic.only")
 ##Resumen
@@ -23,6 +20,10 @@ genofile <- snpgdsOpen("../data/SNPrelate/Hypsi.gds")
 pop_code <- scan("../data/SNPrelate/pop.txt", what=character())
 table(pop_code)
 head(pop_code)
+
+##ID de las muestras
+sample.id <- read.gdsn(index.gdsn(genofile, "sample.id"))
+sample.id
 
 ##PCA
 pca <- snpgdsPCA(genofile, sample.id = NULL, snp.id = NULL, autosome.only = F, num.thread=2)
