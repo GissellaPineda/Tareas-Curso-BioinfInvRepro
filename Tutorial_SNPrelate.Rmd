@@ -1,0 +1,94 @@
+---
+title: "Tutorial_SNPrelate"
+output: html_document
+---
+
+# Script para correr tutoral de SNPrelate
+
+Cargar las paqueterias
+```{r}
+
+library(gdsfmt)
+library(SNPRelate)
+
+```
+
+Convertir mi archivo de datos VCF a GDS
+```{r}
+vcf.fn <- "../data/SNPrelate/Hypsiboas2.vcf"
+
+```
+Reformatear
+```{r}
+snpgdsVCF2GDS(vcf.fn, "../data/SNPrelate/Hypsi.gds", method="biallelic.only")
+```
+Ver el resumen de los datos
+```{r}
+snpgdsSummary("../data/SNPrelate/Hypsi.gds")
+```
+Abrir el archivo GDS
+```{r}
+genofile <- snpgdsOpen("../data/SNPrelate/Hypsi.gds")
+```
+Obtener la informacion de la poblaciones
+```{r}
+pop_code <- scan("../data/SNPrelate/pop.txt", what=character())
+table(pop_code)
+head(pop_code)
+```
+ID de las muestras
+```{r}
+sample.id <- read.gdsn(index.gdsn(genofile, "sample.id"))
+sample.id
+```
+Analisis de componentes principales
+```{r}
+pca <- snpgdsPCA(genofile, sample.id = NULL, snp.id = NULL, autosome.only = F, num.thread=2)
+```
+
+Revisar la porporcion de la varianza
+```{r}
+pc.percent <- pca$varprop*100
+head(round(pc.percent, 2))
+```
+Crear una data.frame
+```{r}
+tab <- data.frame(sample.id = pca$sample.id,
+                  EV1 = pca$eigenvect[,1],    # primer eigenvector
+                  EV2 = pca$eigenvect[,2],    # segundo eigenvector
+                  stringsAsFactors = FALSE)
+```
+
+Graficar
+```{r}
+plot(tab$EV2, tab$EV1, xlab="eigenvector 2", ylab="eigenvector 1")
+```
+
+Revisar que las muestras y las poblaciones esten en el mismo orden
+```{r}
+sample.id
+pop_code
+head(cbind(sample.id, pop_code))
+```
+
+Crear otra data.frame introduciendo la informacion anterior
+```{r}
+tab <- data.frame(sample.id = pca$sample.id,
+                  pop = factor(pop_code)[match(pca$sample.id, sample.id)],
+                  EV1 = pca$eigenvect[,1],    # primer eigenvector
+                  EV2 = pca$eigenvect[,2],    # segundo eigenvector
+                  stringsAsFactors = FALSE)
+head(tab)
+```
+
+Establecer paleta de colores
+```{r}
+palette(c("red", "green", "blue"))
+```
+
+Graficar nuevamente con la informacion poblacional
+```{r}
+plot(tab$EV2, tab$EV1, col=as.integer(tab$pop), xlab="eigenvector 2", ylab="eigenvector 1")
+legend("bottomright", legend=levels(tab$pop), pch="o", col=1:nlevels(tab$pop))
+
+```
